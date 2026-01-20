@@ -1,0 +1,26 @@
+__pycache__/
+*.py[cod]
+*.so
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+.env
+.ipynb_checkpoints/
+
+# Data
+fintabnet/
+TableBank/
+retrieved_papers/
+preprocessed_data/
+outputs/
+
+# Model artifacts
+*.pth
+*.pkl
+*.pt
+
+# OS
+.DS_Store
+Thumbs.db
