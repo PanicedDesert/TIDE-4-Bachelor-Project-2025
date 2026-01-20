@@ -3,13 +3,13 @@
 > **From oceanography papers to structured data — fully automated.**
 
 ---
-## 🚀 What I built (portfolio summary)
+## What We built (portfolio summary)
 TIDE‑4 is an **end‑to‑end ML pipeline** that automatically finds oceanography papers, identifies relevant ones, detects tables in PDFs, and converts them into clean CSV files. The system reduces manual data curation for researchers while maintaining high extraction quality.
 
 **Impact:** Faster data reuse, fewer manual errors, and a reproducible data pipeline for scientific literature.
 
 ---
-## 🧠 How it works (4 stages)
+## How it works (4 stages)
 
 ### **1) Text Retrieval**
 ![TIDE-4 Overview](1.png)
