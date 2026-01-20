@@ -1,117 +1,65 @@
-# **avis — Analyzing Evolving Stories in News Articles (Refactored)**
+# **TIDE‑4 — Automated Table Extraction from Scientific PDFs**
 
-> **Research-driven NLP + Optimization for Story Evolution**
-
----
-## 🔹 Abstract (from the paper)
-> There is an overwhelming number of news articles published every day. Tracking how a news story *evolves over time* is difficult because similarity-based methods tend to circle around the same event instead of revealing its historical origins. This project implements and extends a framework that **mines historical news to detect the origin of events, segments timelines into coherent phases, and identifies the most relevant documents at each turning point**. The approach combines NLP preprocessing, topic modeling, and a continuous optimization formulation that balances **coherence, diffusion, temporal structure, and document relevance**. Quantitative metrics and human evaluations show that the method discovers statistically significant and meaningful storylines in reasonable time, with potential for predicting future entities in evolving stories. 
-
-*(Summarized from Barranco et al., 2017)*
+> **From oceanography papers to structured data — fully automated.**
 
 ---
-## 🎯 What this project is about (for recruiters)
+## 🚀 What I built (portfolio summary)
+TIDE‑4 is an **end‑to‑end ML pipeline** that automatically finds oceanography papers, identifies relevant ones, detects tables in PDFs, and converts them into clean CSV files. The system reduces manual data curation for researchers while maintaining high extraction quality.
 
-This repository is a **clean, production-style refactor** of a research prototype for:
-
-- **News story evolution analysis**
-- **Entity-centric NLP and topic modeling (LDA, TF–IDF)**
-- **Graph/optimization-based storytelling (“connecting the dots”)**
-- **Continuous-time segmentation of document streams**
-- **Relevance-weighted document selection**
-- **Statistical validation and human-in-the-loop evaluation**
-- **Downstream prediction of future entities from past story evolution**
-
-**Keywords:** NLP, text mining, topic modeling, constrained optimization, temporal modeling, document networks, L-BFGS-B, diffusion processes, information retrieval, explainable AI, data science.
+**Impact:** Faster data reuse, fewer manual errors, and a reproducible data pipeline for scientific literature.
 
 ---
-## 🧠 Conceptual Methodology (high-level)
+## 🧠 How it works (4 stages)
 
-### 1️⃣ Preprocessing (Framework)
-- Named-entity extraction (persons, organizations, locations)
-- TF–IDF representation over entities
-- LDA topic modeling to obtain document-topic distributions
-- Temporal + topical filtering of candidate documents
+### **1) Text Retrieval**
+![TIDE-4 Overview](1.png)
+Adaptive querying of the CORE API with a self‑improving list of oceanographic terms, automatic deduplication, and metadata validation.
 
-### 2️⃣ Story Generation (Core Contribution)
-The system identifies **turning points in time** and assigns documents to smooth temporal segments using a continuous membership function. The objective jointly balances:
+### **2) In‑Domain Classification**
+![Dynamic Term Mechanism](2.png)
+A high‑precision **SVM + TF–IDF** classifier filters for truly oceanographic papers (ROC‑AUC ≈ 0.96), keeping downstream noise low.
 
-- **Incoherence (within segments)** — documents in the same phase should be similar
-- **Unconnectedness (across segments)** — different phases should represent different events
-- **Temporal penalty** — discourages grouping far-apart documents
-- **Overlap penalty** — prevents turning points from collapsing together
-- **Relevance weights** — highlights the most important documents per segment
-- **Uniformity penalty** — avoids trivial solutions
+### **3) Table Detection**
+![Table Detection Pipeline](3.png)
+Two‑model Detectron2 setup (Faster R‑CNN):
+- Joint table + cell detector (ICDAR2013) with a custom containment loss.
+- Strong table‑only fallback model (PubTables‑1M, AP ≈ 98%).
 
-Optimization is performed with **L-BFGS-B**.
-
----
-## 📊 Figures from the paper (added visuals)
-
-### 🔹 Diffusion vs Similarity — long vs short histories
-![Diffusion vs Similarity](længerehist.png)
-
-This figure illustrates the core intuition of the project: diffusion-based storytelling can trace **longer, more semantically coherent historical chains**, while pure similarity tends to stay local and repetitive.
+### **4) Table Extraction (LLM)**
+![Example Extraction](perfection.drawio.png)
+Cropped table images are sent to **GPT‑4o**, which returns structured CSV. Low cost, high accuracy for well‑structured tables.
 
 ---
-### 🔹 Beam Search Procedure
-![Beam Search](beamSearch233.drawio.png)
-
-This diagram shows how candidate story paths are expanded and pruned during **beam search**, balancing exploration of alternatives with computational tractability.
-
----
-### 🔹 Statistical Effect Size (Cohen’s d)
-![Cohen's d](Example_cohens_d.png)
-
-Effect size analysis demonstrates that improvements over baselines are not only statistically significant but also **practically meaningful**.
+## 📊 Results (highlights)
+- ~20% of retrieved papers are truly oceanographic → validates need for Stage 2.
+- Very high table localization accuracy (PubTables‑1M AP ≈ 98%).
+- ~75% of manually checked tables produced fully valid CSV.
+- ~$0.003 per table extraction with GPT‑4o.
 
 ---
-### 🔹 Ablation / Sensitivity Plot
-![Ablation Plot](abplot.png)
+## 🛠 Tech Stack
+**Data & NLP:** Python, Pandas, scikit‑learn (SVM, TF–IDF, χ² feature selection)
 
-This plot summarizes how sensitive the solution is to key hyperparameters (e.g., distance threshold, overlap penalty, topic divergence). Stable performance across settings indicates a robust method.
+**Computer Vision:** Detectron2, Faster R‑CNN, custom loss functions
+
+**LLMs:** GPT‑4o (multimodal table interpretation)
+
+**Data Engineering:** CORE API, PDF→image rendering, deduplication, pipeline orchestration
+
+**MLOps / Reproducibility:** Modular package structure, experiment scripts, clear stage separation
 
 ---
-## 🏗 Repository structure (clean, maintainable)
+## 🏗 Repository (clean refactor)
 ```
-avis-refactored/
-├── src/avis/
-│   ├── nlp/           # tokenization, stopwords, preprocessing
-│   ├── models/        # TF–IDF, KMeans topic tools
-│   ├── experiments/   # beam search & parameter sweep scaffolding
-│   └── data/          # Danish stopwords
-├── original/          # your original notebooks (untouched)
-├── pyproject.toml
-└── README.md
+tide4/
+├── src/tide4/
+│   ├── retrieval/      # CORE API + dynamic term search
+│   ├── classification/ # SVM + TF–IDF pipeline
+│   ├── detection/      # Detectron2 models
+│   └── extraction/     # GPT‑4o interface
+└── original/           # Original notebooks (unchanged)
 ```
 
 ---
-## 🚀 Installation
-```bash
-pip install -e .
-```
-
-## 🧪 Minimal example (TF–IDF + KMeans topics)
-```python
-from avis.nlp.stopwords import load_danish_stopwords
-from avis.models.vectorize_tfidf import fit_tfidf, TfidfConfig
-from avis.models.kmeans_topics import fit_kmeans_topics, top_terms_per_cluster, KMeansTopicConfig
-
-stop = load_danish_stopwords()
-docs = [
-    "Dette er en artikel om politik og økonomi...",
-    "Sport og fodbold nyheder...",
-]
-
-vectorizer, X = fit_tfidf(docs, stop, TfidfConfig(max_features=5000))
-model = fit_kmeans_topics(X, KMeansTopicConfig(n_clusters=2))
-print(top_terms_per_cluster(model, vectorizer, top_n=8))
-```
-
----
-## 🏁 Conclusion (from the paper)
-> The framework successfully uncovers the historical evolution of news stories from large archives. It not only reconstructs meaningful timelines but also enables **future entity prediction** from past diffusion patterns. The authors propose extending the work toward early-warning systems for emerging events and incorporating **interactive user feedback** to adapt the optimization to human expectations.
-
----
-## 📚 Reference
-Barranco, R. C., Boedihardjo, A. P., & Hossain, M. S. (2017). *Analyzing Evolving Stories in News Articles*. ACM Conference.
-
+## 🏁 Conclusion
+TIDE‑4 shows that **automated, domain‑specific table extraction from scientific PDFs is practical and cost‑effective**, combining classical ML, deep vision models, and multimodal LLMs into one coherent system.
