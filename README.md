@@ -1,198 +1,117 @@
-# Ocean (refactored)
+# **avis — Analyzing Evolving Stories in News Articles (Refactored)**
 
-This repository started as a set of Jupyter notebooks for a pipeline around **scientific PDFs** and **table extraction** (FinTabNet/TableBank + GPT‑4o + Detectron2).
-
-It has been refactored into a **normal Python package** with:
-- `src/` layout (importable modules)
-- small files with single responsibilities
-- a CLI (`ocean ...`) for reproducible runs
-- configuration via environment variables / arguments (no hardcoded API keys)
-
-The original notebooks are preserved in `original/` for reference.
+> **Research-driven NLP + Optimization for Story Evolution**
 
 ---
+## 🔹 Abstract (from the paper)
+> There is an overwhelming number of news articles published every day. Tracking how a news story *evolves over time* is difficult because similarity-based methods tend to circle around the same event instead of revealing its historical origins. This project implements and extends a framework that **mines historical news to detect the origin of events, segments timelines into coherent phases, and identifies the most relevant documents at each turning point**. The approach combines NLP preprocessing, topic modeling, and a continuous optimization formulation that balances **coherence, diffusion, temporal structure, and document relevance**. Quantitative metrics and human evaluations show that the method discovers statistically significant and meaningful storylines in reasonable time, with potential for predicting future entities in evolving stories. 
 
-## Pipeline overview (methodology)
-
-The project is organized as a set of stages you can run independently or end‑to‑end:
-
-1) **Paper retrieval (optional)**
-   - Query CORE for papers (title/abstract/links)
-   - Optionally download available PDFs
-   - Optionally normalize metadata for later text processing
-
-2) **PDF → image rendering (dataset preparation)**
-   - Render each PDF page to PNG using PyMuPDF (fast and consistent)
-   - In FinTabNet, each “PDF” is typically a single page; we still handle multi‑page PDFs safely
-
-3) **Dataset parsing (FinTabNet)**
-   - Parse the JSONL annotations (table bbox, cell bboxes, structure tokens)
-   - Map each annotation row to the corresponding rendered PNG
-
-4) **Table extraction options**
-
-   **Option A: OpenAI Vision → CSV**
-   - Send each PNG to an OpenAI vision model with a strict “CSV only” prompt
-   - Store model outputs (JSONL) so you can evaluate later without re‑calling the API
-
-   **Option B: Train a joint detector (Detectron2)**
-   - Train one detector with 2 classes: `table` and `cell`
-   - Add a *cell containment* auxiliary loss (GTE‑inspired): predicted cells should fall inside a predicted table
-
-5) **Evaluation (not fully implemented yet)**
-   - The repo stores the *inputs + outputs* needed for evaluation:
-     - OpenAI CSV outputs
-     - FinTabNet ground truth cells/structure/table bbox
-   - Implementing full cell‑matching or structure accuracy metrics is project‑specific and can be added cleanly now that the code is modular.
+*(Summarized from Barranco et al., 2017)*
 
 ---
+## 🎯 What this project is about (for recruiters)
 
-## Project structure
+This repository is a **clean, production-style refactor** of a research prototype for:
 
+- **News story evolution analysis**
+- **Entity-centric NLP and topic modeling (LDA, TF–IDF)**
+- **Graph/optimization-based storytelling (“connecting the dots”)**
+- **Continuous-time segmentation of document streams**
+- **Relevance-weighted document selection**
+- **Statistical validation and human-in-the-loop evaluation**
+- **Downstream prediction of future entities from past story evolution**
+
+**Keywords:** NLP, text mining, topic modeling, constrained optimization, temporal modeling, document networks, L-BFGS-B, diffusion processes, information retrieval, explainable AI, data science.
+
+---
+## 🧠 Conceptual Methodology (high-level)
+
+### 1️⃣ Preprocessing (Framework)
+- Named-entity extraction (persons, organizations, locations)
+- TF–IDF representation over entities
+- LDA topic modeling to obtain document-topic distributions
+- Temporal + topical filtering of candidate documents
+
+### 2️⃣ Story Generation (Core Contribution)
+The system identifies **turning points in time** and assigns documents to smooth temporal segments using a continuous membership function. The objective jointly balances:
+
+- **Incoherence (within segments)** — documents in the same phase should be similar
+- **Unconnectedness (across segments)** — different phases should represent different events
+- **Temporal penalty** — discourages grouping far-apart documents
+- **Overlap penalty** — prevents turning points from collapsing together
+- **Relevance weights** — highlights the most important documents per segment
+- **Uniformity penalty** — avoids trivial solutions
+
+Optimization is performed with **L-BFGS-B**.
+
+---
+## 📊 Figures from the paper (added visuals)
+
+### 🔹 Diffusion vs Similarity — long vs short histories
+![Diffusion vs Similarity](længerehist.png)
+
+This figure illustrates the core intuition of the project: diffusion-based storytelling can trace **longer, more semantically coherent historical chains**, while pure similarity tends to stay local and repetitive.
+
+---
+### 🔹 Beam Search Procedure
+![Beam Search](beamSearch233.drawio.png)
+
+This diagram shows how candidate story paths are expanded and pruned during **beam search**, balancing exploration of alternatives with computational tractability.
+
+---
+### 🔹 Statistical Effect Size (Cohen’s d)
+![Cohen's d](Example_cohens_d.png)
+
+Effect size analysis demonstrates that improvements over baselines are not only statistically significant but also **practically meaningful**.
+
+---
+### 🔹 Ablation / Sensitivity Plot
+![Ablation Plot](abplot.png)
+
+This plot summarizes how sensitive the solution is to key hyperparameters (e.g., distance threshold, overlap penalty, topic divergence). Stable performance across settings indicates a robust method.
+
+---
+## 🏗 Repository structure (clean, maintainable)
 ```
-.
-├─ src/ocean/
-│  ├─ cli/                 # command-line entrypoints
-│  │  └─ main.py
-│  ├─ papers/              # paper retrieval + metadata preprocessing
-│  │  └─ core_api.py
-│  ├─ pdf/                 # pdf utilities
-│  │  └─ render.py
-│  ├─ datasets/            # dataset readers/parsers
-│  │  └─ fintabnet.py
-│  ├─ models/
-│  │  ├─ openai_csv_extractor.py   # OpenAI vision -> CSV
-│  │  └─ gte_detectron2.py         # Detectron2 containment-loss helper
-│  └─ utils/
-│     └─ logging.py
-│
-├─ original/               # your original notebooks (kept for reference)
-├─ configs/                # reserved for future YAML/Detectron2 configs
-├─ scripts/                # reserved for one-off runnable scripts
-├─ tests/                  # reserved for unit tests
-└─ README.md
+avis-refactored/
+├── src/avis/
+│   ├── nlp/           # tokenization, stopwords, preprocessing
+│   ├── models/        # TF–IDF, KMeans topic tools
+│   ├── experiments/   # beam search & parameter sweep scaffolding
+│   └── data/          # Danish stopwords
+├── original/          # your original notebooks (untouched)
+├── pyproject.toml
+└── README.md
 ```
 
-Why this layout:
-- **Imports work the same everywhere** (`pip install -e .` then `from ocean...`).
-- Code is **testable** (small modules; no global state).
-- You can run everything **from the CLI** with explicit inputs and outputs.
-
 ---
-
-## Installation
-
-Create a fresh environment (recommended) and install editable:
-
+## 🚀 Installation
 ```bash
 pip install -e .
 ```
 
-Optional extras:
+## 🧪 Minimal example (TF–IDF + KMeans topics)
+```python
+from avis.nlp.stopwords import load_danish_stopwords
+from avis.models.vectorize_tfidf import fit_tfidf, TfidfConfig
+from avis.models.kmeans_topics import fit_kmeans_topics, top_terms_per_cluster, KMeansTopicConfig
 
-```bash
-# OpenAI vision extraction
-pip install -e ".[openai]"
+stop = load_danish_stopwords()
+docs = [
+    "Dette er en artikel om politik og økonomi...",
+    "Sport og fodbold nyheder...",
+]
 
-# Core ML dependencies (torch, opencv, matplotlib)
-pip install -e ".[ml]"
-```
-
-Detectron2 installation is system/CUDA specific and should be installed separately.
-
----
-
-## Configuration
-
-### CORE API (paper retrieval)
-Set:
-- `CORE_API_KEY` (required)
-- `CORE_BASE_URL` (optional, default: `https://api.core.ac.uk`)
-
-Example:
-
-```bash
-export CORE_API_KEY="..."
-```
-
-### OpenAI
-Set standard OpenAI env vars (recommended):
-- `OPENAI_API_KEY` (required)
-- optionally `OPENAI_ORG_ID`, `OPENAI_PROJECT_ID` depending on your setup
-
-Example:
-
-```bash
-export OPENAI_API_KEY="..."
+vectorizer, X = fit_tfidf(docs, stop, TfidfConfig(max_features=5000))
+model = fit_kmeans_topics(X, KMeansTopicConfig(n_clusters=2))
+print(top_terms_per_cluster(model, vectorizer, top_n=8))
 ```
 
 ---
-
-## Usage (CLI)
-
-After installing (`pip install -e .`), you get an `ocean` command.
-
-### 1) Search papers on CORE
-
-```bash
-ocean papers search --query "oceanographic" --pulls 100 --runs 3 --out outputs/core_results.jsonl --preprocess
-```
-
-### 2) Download PDFs (when available)
-
-```bash
-ocean papers download --query "oceanographic" --pulls 50 --runs 2 --out-dir retrieved_papers
-```
-
-### 3) Render a single PDF to PNG
-
-```bash
-ocean pdf render --pdf retrieved_papers/some.pdf --out-dir outputs/images --dpi 300
-```
-
-### 4) Render PDFs referenced in a FinTabNet JSONL
-
-Assuming:
-- PDFs are in `fintabnet/pdf/`
-- JSONL points to those PDF filenames
-
-```bash
-ocean pdf render-from-jsonl --jsonl fintabnet/FinTabNet_1.0.0_table_train.jsonl --pdf-root fintabnet/pdf --dpi 300
-```
-
-### 5) OpenAI vision extraction (PNG folder → JSONL results)
-
-```bash
-ocean openai --images-dir fintabnet/pdf --out-jsonl outputs/gpt_tables.jsonl --model gpt-4o --limit 50
-```
+## 🏁 Conclusion (from the paper)
+> The framework successfully uncovers the historical evolution of news stories from large archives. It not only reconstructs meaningful timelines but also enables **future entity prediction** from past diffusion patterns. The authors propose extending the work toward early-warning systems for emerging events and incorporating **interactive user feedback** to adapt the optimization to human expectations.
 
 ---
+## 📚 Reference
+Barranco, R. C., Boedihardjo, A. P., & Hossain, M. S. (2017). *Analyzing Evolving Stories in News Articles*. ACM Conference.
 
-## Notes on changes from the notebooks
-
-- No hardcoded keys. Everything uses environment variables.
-- PDF rendering is now safe for multi-page PDFs (page suffixing).
-- `getPaperAPI.collect_data` from the notebook didn’t exist in the repo; it is replaced by `iter_papers()` in `ocean/papers/core_api.py`.
-- Detectron2 customization is separated into `gte_detectron2.py` (clean place to evolve the joint model and containment loss).
-
----
-
-## Next recommended improvements
-
-If you want this repo to be “production-ready”, these are the best next steps:
-
-1) Add a **proper experiment config** (YAML) and an explicit `train` CLI subcommand for Detectron2.
-2) Add **evaluation scripts**:
-   - CSV → table grid parsing
-   - cell matching metrics (precision/recall/F1)
-   - structure metrics (TEDS-style if desired)
-3) Add unit tests for:
-   - JSONL parsing
-   - PDF rendering
-   - metadata preprocessing
-
----
-
-## License
-
-MIT (set in `pyproject.toml`).
